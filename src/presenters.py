@@ -8,6 +8,7 @@ from rich.text import Text
 from src.models import (
     BreakdownReport,
     CommentDraft,
+    ParentSummaryReport,
     RiskReport,
     RiskSeverity,
     StandupReport,
@@ -85,6 +86,26 @@ def render_triage(report: TriageReport) -> None:
             title="[yellow]Stale Tickets[/yellow]",
             border_style="yellow",
         ))
+        console.print()
+
+    # Workflow health
+    if report.workflow_health:
+        console.print(Panel.fit(
+            _format_workflow_health(report),
+            title="[magenta]Workflow Health[/magenta]",
+            border_style="magenta",
+        ))
+        console.print()
+
+    # Parent task summaries
+    if report.parent_summaries:
+        console.print("[bold]Parent Task Summaries[/bold]")
+        for summary in report.parent_summaries:
+            console.print(Panel.fit(
+                _format_parent_summary_inline(summary),
+                title=f"[cyan]{summary.parent_key}[/cyan] — {truncate(summary.parent_summary, 64)}",
+                border_style="cyan",
+            ))
         console.print()
 
     # Suggested actions
@@ -201,6 +222,39 @@ def render_standup(report: StandupReport) -> None:
         console.print()
 
 
+def render_parent_summary(report: ParentSummaryReport) -> None:
+    console.print()
+    console.rule(f"[bold]Jiro — Parent Task Summary: {report.parent_key}[/bold]")
+    console.print(f"[dim]{report.parent_summary}[/dim]")
+    console.print()
+
+    console.print(Panel.fit(
+        report.goal,
+        title="[cyan]Goal[/cyan]",
+        border_style="cyan",
+    ))
+    console.print()
+
+    console.print(Panel.fit(
+        report.overview,
+        title="[magenta]Overview[/magenta]",
+        border_style="magenta",
+    ))
+    console.print()
+
+    console.print(Panel.fit(
+        report.health,
+        title="[yellow]Health[/yellow]",
+        border_style="yellow",
+    ))
+    console.print()
+
+    console.print("[bold]Progress[/bold]")
+    for item in report.progress:
+        console.print(f"  [green]•[/green] {item}")
+    console.print()
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -217,6 +271,34 @@ def _format_stale(report: TriageReport) -> str:
     lines: list[str] = []
     for s in report.stale_tickets:
         lines.append(f"[cyan]{s.issue_key}[/cyan]: {truncate(s.summary, 50)} — {s.days_since_update}d stale ({s.status})")
+    return "\n".join(lines)
+
+
+def _format_workflow_health(report: TriageReport) -> str:
+    workflow = report.workflow_health
+    if not workflow:
+        return "No workflow data."
+
+    lines: list[str] = []
+    lines.append(f"Product Coverage: [bold]{workflow.product_coverage_pct:.1f}%[/bold]")
+    lines.append(f"Orphan Tasks: [bold]{len(workflow.orphan_tasks)}[/bold]")
+
+    if workflow.work_origin_breakdown:
+        lines.append("Work Origin:")
+        for item in workflow.work_origin_breakdown:
+            label = item.origin.value.replace("_", " ").title()
+            lines.append(f"  - {label}: {item.count}")
+    return "\n".join(lines)
+
+
+def _format_parent_summary_inline(summary: ParentSummaryReport) -> str:
+    lines: list[str] = []
+    lines.append(f"[bold]Goal:[/bold] {summary.goal}")
+    lines.append(f"[bold]Overview:[/bold] {summary.overview}")
+    lines.append(f"[bold]Health:[/bold] {summary.health}")
+    lines.append("[bold]Progress:[/bold]")
+    for item in summary.progress[:3]:
+        lines.append(f"  - {item}")
     return "\n".join(lines)
 
 

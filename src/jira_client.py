@@ -24,6 +24,8 @@ ISSUE_FIELDS = [
     "updated",
     "resolution",
     "parent",
+    "customfield_10014",  # epic link (classic projects)
+    "customfield_10008",  # common alternate epic field id
     "subtasks",
     "issuelinks",
     "customfield_10016",  # story points (common field id)
@@ -57,7 +59,14 @@ class JiraClient:
             "maxResults": max_results,
             "fields": ISSUE_FIELDS,
         }
-        data = self._post("/search", payload)
+        # Jira Cloud deprecated /search on some tenants in favor of /search/jql.
+        # Prefer the new endpoint, but fall back for older instances.
+        try:
+            data = self._post("/search/jql", payload)
+        except JiraClientError as exc:
+            if exc.status_code != 404:
+                raise
+            data = self._post("/search", payload)
         return [self._parse_issue(raw) for raw in data.get("issues", [])]
 
     def get_issue(self, issue_key: str) -> Issue:
@@ -119,6 +128,7 @@ class JiraClient:
             updated=_parse_datetime(fields.get("updated")),
             resolution=_nested_name(fields, "resolution"),
             parent_key=_safe_key(fields.get("parent")),
+            epic_key=_extract_epic_key(fields),
             subtask_keys=[s["key"] for s in fields.get("subtasks", [])],
             linked_issue_keys=_extract_linked_keys(fields.get("issuelinks", [])),
             story_points=fields.get("customfield_10016"),
@@ -216,4 +226,16 @@ def _extract_sprint_name(sprint: object) -> str | None:
         last = sprint[-1]
         if isinstance(last, dict):
             return last.get("name")
+    return None
+
+
+def _extract_epic_key(fields: dict) -> str | None:
+    for field_name in ("customfield_10014", "customfield_10008", "epic"):
+        value = fields.get(field_name)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+        if isinstance(value, dict):
+            key = value.get("key")
+            if isinstance(key, str) and key.strip():
+                return key.strip()
     return None

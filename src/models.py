@@ -26,6 +26,7 @@ class Issue(BaseModel):
     updated: datetime | None = None
     resolution: str | None = None
     parent_key: str | None = None
+    epic_key: str | None = None
     subtask_keys: list[str] = Field(default_factory=list)
     linked_issue_keys: list[str] = Field(default_factory=list)
     story_points: float | None = None
@@ -88,6 +89,36 @@ class TriageReport(BaseModel):
     blockers: list[BlockerItem] = Field(default_factory=list)
     stale_tickets: list[StaleTicketItem] = Field(default_factory=list)
     suggested_actions: list[SuggestedAction] = Field(default_factory=list)
+    workflow_health: WorkflowHealthReport | None = None
+    parent_summaries: list[ParentSummaryReport] = Field(default_factory=list)
+
+
+# ---------------------------------------------------------------------------
+# Workflow health models
+# ---------------------------------------------------------------------------
+
+class WorkOrigin(str, Enum):
+    PRODUCT_EPIC = "product_epic"
+    BUG_PRODUCTION = "bug_production"
+    ADHOC_ENGINEERING = "adhoc_engineering"
+    UNKNOWN = "unknown"
+
+
+class OrphanTaskItem(BaseModel):
+    issue_key: str
+    summary: str
+    issue_type: str
+
+
+class WorkOriginBreakdownItem(BaseModel):
+    origin: WorkOrigin
+    count: int
+
+
+class WorkflowHealthReport(BaseModel):
+    product_coverage_pct: float
+    orphan_tasks: list[OrphanTaskItem] = Field(default_factory=list)
+    work_origin_breakdown: list[WorkOriginBreakdownItem] = Field(default_factory=list)
 
 
 # ---------------------------------------------------------------------------
@@ -186,3 +217,16 @@ class StandupReport(BaseModel):
     today: list[StandupItem] = Field(default_factory=list)
     blockers: list[StandupItem] = Field(default_factory=list)
     notes: list[str] = Field(default_factory=list)
+
+
+# ---------------------------------------------------------------------------
+# Parent summary models
+# ---------------------------------------------------------------------------
+
+class ParentSummaryReport(BaseModel):
+    parent_key: str
+    parent_summary: str
+    goal: str
+    overview: str
+    health: str
+    progress: list[str] = Field(default_factory=list)

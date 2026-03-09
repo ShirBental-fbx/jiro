@@ -46,18 +46,18 @@ Create a `.env` file (or set environment variables):
 
 ```bash
 # Triage your open issues
-python cli.py triage
+.venv/bin/python cli.py triage
 
 # Triage with custom JQL
-python cli.py triage --jql "project = INFRA AND assignee = currentUser() AND resolution = Unresolved"
+.venv/bin/python cli.py triage --jql "project = INFRA AND assignee = currentUser() AND resolution = Unresolved"
 ```
 
-Shows: priority summary, blockers, stale tickets, suggested next actions.
+Shows: priority summary, blockers, stale tickets, workflow health, suggested next actions.
 
 ### Risk Assessment
 
 ```bash
-python cli.py risk PROJ-123
+.venv/bin/python cli.py risk PROJ-123
 ```
 
 Flags: vague descriptions, missing acceptance criteria, unclear dependencies, stale tickets, missing owners, oversized scope.
@@ -65,7 +65,7 @@ Flags: vague descriptions, missing acceptance criteria, unclear dependencies, st
 ### Ticket Breakdown
 
 ```bash
-python cli.py breakdown PROJ-123
+.venv/bin/python cli.py breakdown PROJ-123
 ```
 
 Generates: implementation plan, suggested subtasks, technical risks, missing information, clarification questions.
@@ -74,16 +74,16 @@ Generates: implementation plan, suggested subtasks, technical risks, missing inf
 
 ```bash
 # Status update
-python cli.py draft-comment PROJ-123 --type status-update
+.venv/bin/python cli.py draft-comment PROJ-123 --type status-update
 
 # Blocker update
-python cli.py draft-comment PROJ-123 --type blocker-update
+.venv/bin/python cli.py draft-comment PROJ-123 --type blocker-update
 
 # Clarification request
-python cli.py draft-comment PROJ-123 --type clarification-request
+.venv/bin/python cli.py draft-comment PROJ-123 --type clarification-request
 
 # Ready for review
-python cli.py draft-comment PROJ-123 --type ready-for-review
+.venv/bin/python cli.py draft-comment PROJ-123 --type ready-for-review
 ```
 
 Produces copy-paste-ready Jira comments with placeholders for details you fill in.
@@ -91,13 +91,24 @@ Produces copy-paste-ready Jira comments with placeholders for details you fill i
 ### Standup Summary
 
 ```bash
-python cli.py standup
+.venv/bin/python cli.py standup
 
 # With custom JQL
-python cli.py standup --jql "project = INFRA AND assignee = currentUser() AND resolution = Unresolved"
+.venv/bin/python cli.py standup --jql "project = INFRA AND assignee = currentUser() AND resolution = Unresolved"
 ```
 
 Generates: Yesterday / Today / Blockers from your recent Jira activity.
+
+### Parent Task Summary
+
+```bash
+.venv/bin/python cli.py parent-summary EPIC-123
+```
+
+Generates a parent-level summary with:
+- Goal (extracted from `Goal` / `Overview` / `Context` section in parent description, with fallback to first meaningful sentence)
+- Overview (current focus based on top 2-3 active child tasks)
+- Progress (concise active child task progress lines)
 
 ## Architecture
 
@@ -107,9 +118,11 @@ CLI (cli.py)
        ├─ JiraClient (API communication, response normalization)
        └─ Engines (pure business logic)
             ├─ triage_engine    — daily prioritization
+            ├─ workflow_engine  — workflow discipline signals
             ├─ risk_engine      — ticket quality/risk detection
             ├─ breakdown_engine — implementation planning
             ├─ comment_engine   — comment draft generation
+            ├─ parent_summary_engine — parent goal/overview/progress summary
             └─ standup_engine   — standup report generation
   └─ Presenters (Rich-based terminal output)
 ```

@@ -12,6 +12,7 @@ from src.models import (
 )
 from src.risk_engine import assess_risks
 from src.utils import days_ago, text_contains_any
+from src.workflow_engine import analyze_workflow_health
 
 
 DEFAULT_JQL = (
@@ -55,6 +56,7 @@ def build_triage_report(
     blockers = _find_blockers(issues, comments_by_key)
     stale = _find_stale_tickets(issues, settings)
     actions = _suggest_actions(issues, comments_by_key, settings)
+    workflow_health = analyze_workflow_health(issues)
 
     return TriageReport(
         total_issues=len(issues),
@@ -62,6 +64,7 @@ def build_triage_report(
         blockers=blockers,
         stale_tickets=stale,
         suggested_actions=actions,
+        workflow_health=workflow_health,
     )
 
 

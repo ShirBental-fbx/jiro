@@ -95,3 +95,29 @@ def test_no_blocker_on_clean_ticket(settings):
     issues = [make_issue(key="CLEAN-1", status="In Progress", description="Normal work happening here.")]
     report = build_triage_report(issues, {}, settings)
     assert len(report.blockers) == 0
+
+
+def test_triage_includes_workflow_health(settings):
+    issues = [
+        make_issue(key="WF-1", parent_key="PROD-10"),
+        make_issue(key="WF-2", issue_type="Task"),
+    ]
+    report = build_triage_report(issues, {}, settings)
+
+    assert report.workflow_health is not None
+    assert report.workflow_health.product_coverage_pct == 50.0
+    assert len(report.workflow_health.orphan_tasks) == 1
+
+
+def test_triage_work_origin_breakdown(settings):
+    issues = [
+        make_issue(key="WFO-1", issue_type="Bug"),
+        make_issue(key="WFO-2", epic_key="EPIC-9"),
+        make_issue(key="WFO-3", labels=["techdebt"]),
+    ]
+    report = build_triage_report(issues, {}, settings)
+
+    breakdown = {item.origin.value: item.count for item in report.workflow_health.work_origin_breakdown}
+    assert breakdown["bug_production"] == 1
+    assert breakdown["product_epic"] == 1
+    assert breakdown["adhoc_engineering"] == 1

@@ -12,6 +12,7 @@ from src.presenters import (
     console,
     render_breakdown,
     render_comment,
+    render_parent_summary,
     render_risk,
     render_standup,
     render_triage,
@@ -51,6 +52,13 @@ def main() -> None:
     # standup
     standup_parser = subparsers.add_parser("standup", help="Generate standup summary")
     standup_parser.add_argument("--jql", type=str, default=None, help="Custom JQL query")
+
+    # parent-summary
+    parent_parser = subparsers.add_parser(
+        "parent-summary",
+        help="Generate Goal/Overview/Progress from parent + active child tasks",
+    )
+    parent_parser.add_argument("issue_key", type=str, help="Parent Jira issue key (e.g. EPIC-123)")
 
     args = parser.parse_args()
 
@@ -99,6 +107,10 @@ def _dispatch(agent: JiroAgent, args: argparse.Namespace) -> None:
     elif cmd == "standup":
         report = agent.standup(jql=args.jql)
         render_standup(report)
+
+    elif cmd == "parent-summary":
+        report = agent.parent_summary(args.issue_key)
+        render_parent_summary(report)
 
     else:
         console.print(f"[red]Unknown command: {cmd}[/red]")

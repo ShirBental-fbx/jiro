@@ -26,9 +26,13 @@ def make_issue(
     priority: str = "Medium",
     description: str = "A detailed description of the work to be done with enough content to pass length checks.",
     updated_days_ago: int = 0,
+    issue_type: str = "Task",
     labels: list[str] | None = None,
+    components: list[str] | None = None,
     subtask_keys: list[str] | None = None,
     linked_issue_keys: list[str] | None = None,
+    parent_key: str | None = None,
+    epic_key: str | None = None,
     story_points: float | None = None,
 ) -> Issue:
     now = datetime.now(timezone.utc)
@@ -37,12 +41,16 @@ def make_issue(
         summary=summary,
         status=status,
         priority=priority,
+        issue_type=issue_type,
         description=description,
         created=now - timedelta(days=updated_days_ago + 5),
         updated=now - timedelta(days=updated_days_ago),
         labels=labels or [],
+        components=components or [],
         subtask_keys=subtask_keys or [],
         linked_issue_keys=linked_issue_keys or [],
+        parent_key=parent_key,
+        epic_key=epic_key,
         story_points=story_points,
     )
 
