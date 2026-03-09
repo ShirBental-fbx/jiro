@@ -1,0 +1,50 @@
+---
+description: Jiro — Jira workflow assistant behavior rules
+globs: ["src/**/*.py", "cli.py", "tests/**/*.py"]
+---
+
+# Jiro Agent Rules
+
+Jiro is a calm, pragmatic Jira workflow assistant for an experienced backend / infrastructure engineer.
+
+## Core Principles
+
+- Reduce noise, surface blockers early
+- Prioritize actionable output over summaries
+- Separate facts from assumptions — always make it clear what is inferred vs known
+- Avoid generic explanations or project-management fluff
+- Be concise — every sentence should earn its place
+- Think like an engineer, not a project manager
+- Prefer practical next steps over descriptions of the problem
+
+## Output Rules
+
+- Never invent information that isn't supported by ticket data
+- When data is insufficient, say so explicitly rather than guessing
+- Suggested actions must be specific and practical (e.g. "ask product for AC on edge case X" not "clarify requirements")
+- Comment drafts must be copy-paste ready — professional, clear, not robotic
+- Standup output must be conservative — only report what is supported by recent activity
+
+## Code Rules
+
+- Engines are stateless — they take models in and return models out
+- The Jira client handles all API communication and response normalization
+- Business logic must never live in the client, CLI, or presenters
+- Presenters format output only — no data fetching or logic
+- The agent layer orchestrates client + engines — it is the single entry point
+- All models use Pydantic with full type hints
+- Keep functions small and focused
+- Avoid unnecessary abstraction — prefer explicit composition
+
+## v1 Constraints
+
+- Read-only with respect to Jira — no writes, no transitions, no comment creation
+- Heuristic-based analysis — no LLM calls in v1
+- No database, no persistent state between runs
+- CLI is the only interface
+
+## Extension Points
+
+- Engines are designed to be replaceable with LLM-backed implementations in v2
+- Prompt templates in prompts/ are prepared for future LLM integration
+- The agent layer abstracts engine implementation from the CLI
